@@ -1,3 +1,9 @@
+
+const bossSprite_idle = new Image();
+bossSprite_idle.src = 'sprite/boss_idle.png';
+const bossSprite_angry = new Image();
+bossSprite_angry.src = 'sprite/boss_angry.png'
+
 class Boss {
     constructor(x, y) {
         this.x = x;
@@ -19,6 +25,7 @@ class Boss {
         this.nextAttackTimer = 1;
         this.phase = 1;
         this.phaseThreshold = this.maxHealth * 0.5;
+        this.sprite = bossSprite_idle;
     }
     
     update(deltaTime, player) {
@@ -64,6 +71,8 @@ class Boss {
             this.phase = 2;
             this.speed *= 1.3;
             this.attackCooldown *= 0.7;
+            this.color = '#800000';
+            this.sprite = bossSprite_angry;
         }
     }
     
@@ -135,10 +144,8 @@ class Boss {
         ctx.save();
         
         // Body
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        const spriteSize = this.radius * 2;
+        ctx.drawImage(this.sprite, this.x - this.radius, this.y - this.radius, spriteSize, spriteSize);
         
         // Phase indicator
         if (this.phase === 2) {
