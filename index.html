@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elden Souls - Top Down</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="stat-screen" class="screen">
+            <h1>Character Creation</h1>
+            <p>Distribute 20 points among your stats (each stat starts at 1)</p>
+            <div class="stat-row">
+                <label for="strength">Strength (Damage):</label>
+                <span class="base-stat">1 +</span>
+                <input type="number" id="strength" min="1" max="20" value="1">
+                <span class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <label for="agility">Agility (Roll Cooldown):</label>
+                <span class="base-stat">1 +</span>
+                <input type="number" id="agility" min="1" max="20" value="1">
+                <span class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <label for="vitality">Vitality (Health):</label>
+                <span class="base-stat">1 +</span>
+                <input type="number" id="vitality" min="1" max="20" value="1">
+                <span class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <label for="dexterity">Dexterity (Attack Speed):</label>
+                <span class="base-stat">1 +</span>
+                <input type="number" id="dexterity" min="1" max="20" value="1">
+                <span class="stat-value">1</span>
+            </div>
+            <div class="stat-row">
+                <label for="intelligence">Intelligence (Spell Damage):</label>
+                <span class="base-stat">1 +</span>
+                <input type="number" id="intelligence" min="1" max="20" value="1">
+                <span class="stat-value">1</span>
+            </div>
+            <div class="points-remaining">Points remaining: <span id="points-left">20</span></div>
+            <button id="start-game">Begin Battle</button>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="game-canvas-container">
+                <canvas id="game-canvas" width="800" height="600"></canvas>
+                <div id="hud">
+                    <div class="health-bar">
+                        <div class="health-fill" id="player-health"></div>
+                    </div>
+                    <div class="boss-health-bar">
+                        <div class="health-fill" id="boss-health"></div>
+                    </div>
+                    <div id="stun-meter-container">
+                        <div class="stun-meter-fill" id="stun-meter"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="controls-info">
+                <p>WASD: Move | Space: Roll | Left Click: Attack | Right Click: Block | Q: Spell | E: Parry | Shift: Jump</p>
+            </div>
+        </div>
+
+        <div id="win-screen" class="screen hidden">
+            <h1>Victory Achieved</h1>
+            <p>You have defeated the boss!</p>
+            <button id="play-again-win">Try Again</button>
+        </div>
+
+        <div id="death-screen" class="screen hidden">
+            <h1>You Died</h1>
+            <p>The boss has defeated you...</p>
+            <button id="play-again-death">Try Again</button>
+        </div>
+    </div>
+
+    <script src="player.js"></script>
+    <script src="boss.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
