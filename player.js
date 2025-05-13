@@ -21,7 +21,7 @@ class Player {
         // Derived attributes
         this.maxHealth = 150 + (this.vitality * 10);
         this.health = this.maxHealth;
-        this.attackDamage = 25 + (this.strength * 3);
+        this.attackDamage = 30 + (this.strength * 3);
         this.attackCooldown = 0.5 - (this.dexterity * 0.03);
         this.baseRollCooldown = 1.25;
         this.rollCooldown = this.baseRollCooldown;
