@@ -59,7 +59,7 @@ class Boss {
         this.multiLaserActive = false;
         this.multiLaserTimer = 0;
         this.multiLaserDuration = 3.0;
-        this.multiLaserDamage = 7.5; // Reduced from 15 to 7.5 (50% reduction)
+        this.multiLaserDamage = 4.5; // Reduced from 15 to 7.5 (50% reduction)
         this.multiLaserCount = 8;
         this.multiLaserAngles = [];
         this.multiLaserRotationSpeed = Math.PI * 0.5;
