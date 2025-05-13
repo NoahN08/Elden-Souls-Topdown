@@ -19,11 +19,11 @@ class Player {
         this.intelligence = stats.intelligence;
         
         // Derived attributes
-        this.maxHealth = 100 + (this.vitality * 10);
+        this.maxHealth = 150 + (this.vitality * 10);
         this.health = this.maxHealth;
-        this.attackDamage = 20 + (this.strength * 3);
-        this.attackCooldown = 0.5 - (this.dexterity * 0.01);
-        this.baseRollCooldown = 1.5;
+        this.attackDamage = 25 + (this.strength * 3);
+        this.attackCooldown = 0.5 - (this.dexterity * 0.03);
+        this.baseRollCooldown = 1.25;
         this.rollCooldown = this.baseRollCooldown;
         this.spellDamage = 30 + (this.intelligence * 4);
         
