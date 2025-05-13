@@ -1,9 +1,11 @@
+// player.js
 class Player {
     constructor(x, y, stats) {
         this.x = x;
         this.y = y;
         this.radius = 15;
-        this.speed = 200;
+        this.baseSpeed = 200;
+        this.speed = this.baseSpeed;
         this.color = '#3498db';
         
         // Stats
@@ -30,9 +32,6 @@ class Player {
         this.iframes = false;
         this.iframesTimer = 0;
         this.blocking = false;
-        this.parryWindow = false;
-        this.jumping = false;
-        this.jumpTimer = 0;
         this.spellCooldown = 0;
         this.spellActive = false;
         this.spellTimer = 0;
@@ -52,13 +51,6 @@ class Player {
             this.iframesTimer -= deltaTime;
             if (this.iframesTimer <= 0) {
                 this.iframes = false;
-            }
-        }
-        
-        if (this.jumping) {
-            this.jumpTimer -= deltaTime;
-            if (this.jumpTimer <= 0) {
-                this.jumping = false;
             }
         }
         
@@ -83,11 +75,15 @@ class Player {
             }
         }
         
+        // Handle blocking
+        this.blocking = mouse.right;
+        this.speed = this.blocking ? this.baseSpeed * 0.5 : this.baseSpeed;
+        
         // Movement
         let moveX = 0;
         let moveY = 0;
         
-        if (!this.isRolling && !this.jumping) {
+        if (!this.isRolling) {
             if (keys['a'] || keys['arrowleft']) moveX = -1;
             if (keys['d'] || keys['arrowright']) moveX = 1;
             if (keys['w'] || keys['arrowup']) moveY = -1;
@@ -99,12 +95,6 @@ class Player {
                 moveY *= 0.7071;
             }
             
-            // Handle jumping
-            if ((keys['shift'] || keys[' ']) && !this.jumping && this.rollTimer <= 0) {
-                this.jumping = true;
-                this.jumpTimer = 0.4;
-            }
-            
             // Handle rolling
             if ((keys[' '] || keys['shift']) && this.rollTimer <= 0 && (moveX !== 0 || moveY !== 0)) {
                 this.isRolling = true;
@@ -113,10 +103,6 @@ class Player {
                 this.iframes = true;
                 this.iframesTimer = 0.3;
             }
-            
-            // Handle blocking
-            this.blocking = mouse.right;
-            this.parryWindow = this.blocking && mouse.left;
         }
         
         // Handle rolling movement
@@ -132,21 +118,48 @@ class Player {
         }
         
         // Apply movement
-        this.x += moveX * this.speed * deltaTime * (this.isRolling ? this.rollSpeed / this.speed : 1);
-        this.y += moveY * this.speed * deltaTime * (this.isRolling ? this.rollSpeed / this.speed : 1);
+        const newX = this.x + moveX * this.speed * deltaTime * (this.isRolling ? this.rollSpeed / this.speed : 1);
+        const newY = this.y + moveY * this.speed * deltaTime * (this.isRolling ? this.rollSpeed / this.speed : 1);
         
         // Boundary checks
-        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+        const arenaCenterX = canvas.width / 2;
+        const arenaCenterY = canvas.height / 2;
+        const arenaRadius = 250 - this.radius;
+        
+        const dx = newX - arenaCenterX;
+        const dy = newY - arenaCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= arenaRadius) {
+            this.x = newX;
+            this.y = newY;
+        } else {
+            // Slide along the boundary
+            const angle = Math.atan2(dy, dx);
+            this.x = arenaCenterX + Math.cos(angle) * arenaRadius;
+            this.y = arenaCenterY + Math.sin(angle) * arenaRadius;
+        }
+        
+        // Prevent overlapping with boss
+        const bossDx = this.x - boss.x;
+        const bossDy = this.y - boss.y;
+        const bossDistance = Math.sqrt(bossDx * bossDx + bossDy * bossDy);
+        const minDistance = this.radius + boss.radius;
+        
+        if (bossDistance < minDistance) {
+            const angle = Math.atan2(bossDy, bossDx);
+            this.x = boss.x + Math.cos(angle) * minDistance;
+            this.y = boss.y + Math.sin(angle) * minDistance;
+        }
         
         // Handle attacking
-        if (mouse.left && this.attackTimer <= 0 && !this.isRolling && !this.jumping && !this.blocking) {
+        if (mouse.left && this.attackTimer <= 0 && !this.isRolling && !this.blocking) {
             this.attack(boss);
             this.attackTimer = this.attackCooldown;
         }
         
         // Handle spell casting
-        if (keys['q'] && this.spellCooldown <= 0 && !this.isRolling && !this.jumping) {
+        if (keys['q'] && this.spellCooldown <= 0 && !this.isRolling) {
             this.castSpell(mouse);
             this.spellCooldown = 2;
         }
@@ -184,22 +197,14 @@ class Player {
         }
     }
     
-    takeDamage(amount, isParry = false) {
+    takeDamage(amount) {
         if (this.iframes) return false;
         
         if (this.blocking) {
-            if (isParry) {
-                // Parry successful - take reduced damage and counter
-                const damageTaken = amount * 0.2;
-                this.health -= damageTaken;
-                updateHealthBars();
-                return true;
-            } else {
-                // Regular block - take reduced damage
-                this.health -= amount * 0.65;
-                updateHealthBars();
-                return false;
-            }
+            // Regular block - take reduced damage
+            this.health -= amount * 0.65;
+            updateHealthBars();
+            return false;
         } else {
             // No block - take full damage
             this.health -= amount;
@@ -219,15 +224,15 @@ class Player {
         // Body
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y - (this.jumping ? 20 : 0), this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
         
-        // Weapon indicator
+        // Block indicator
         if (this.blocking) {
             ctx.strokeStyle = '#f1c40f';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(this.x, this.y - (this.jumping ? 20 : 0), this.radius + 10, 0, Math.PI * 2);
+            ctx.arc(this.x, this.y, this.radius + 10, 0, Math.PI * 2);
             ctx.stroke();
         }
         
