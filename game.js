@@ -1,6 +1,8 @@
-// Main game loop and setup
+// game.js
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+const bgm = document.getElementById('bgm');
+const bgmFiles = ['BGM/track1.mp3', 'BGM/track2.mp3', 'BGM/track3.mp3', 'BGM/track4.mp3', 'BGM/track5.mp3']; // Add all your BGM files here
 
 let gameRunning = false;
 let lastTime = 0;
@@ -12,7 +14,8 @@ let stunMeter = 0;
 const STUN_THRESHOLD = 100;
 let stunActive = false;
 let stunTimer = 0;
-const STUN_DURATION = 2; // seconds
+const STUN_DURATION = 4; // seconds
+let currentBgmIndex = 0;
 
 // Initialize game
 function initGame(stats) {
@@ -23,7 +26,22 @@ function initGame(stats) {
     stunActive = false;
     updateStunMeter();
     updateHealthBars();
+    playRandomBGM();
     requestAnimationFrame(gameLoop);
+}
+
+function playRandomBGM() {
+    currentBgmIndex = Math.floor(Math.random() * bgmFiles.length);
+    bgm.src = bgmFiles[currentBgmIndex];
+    bgm.loop = false;
+    bgm.volume = 0.5;
+    bgm.play().catch(e => console.log("Autoplay prevented:", e));
+    
+    bgm.addEventListener('ended', () => {
+        currentBgmIndex = (currentBgmIndex + 1) % bgmFiles.length;
+        bgm.src = bgmFiles[currentBgmIndex];
+        bgm.play().catch(e => console.log("Autoplay prevented:", e));
+    });
 }
 
 // Main game loop
@@ -49,15 +67,19 @@ function update(deltaTime) {
         stunTimer -= deltaTime;
         if (stunTimer <= 0) {
             stunActive = false;
+            stunMeter = 0;
+            updateStunMeter();
         }
     }
     
     // Check for death or victory
     if (player.health <= 0) {
         gameRunning = false;
+        bgm.pause();
         showScreen('death-screen');
     } else if (boss.health <= 0) {
         gameRunning = false;
+        bgm.pause();
         showScreen('win-screen');
     }
 }
@@ -68,11 +90,18 @@ function render() {
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw arena
+    // Draw arena with border
     ctx.fillStyle = '#222';
     ctx.beginPath();
     ctx.arc(canvas.width / 2, canvas.height / 2, 250, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Draw border
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, 250, 0, Math.PI * 2);
+    ctx.stroke();
     
     // Draw player and boss
     player.render(ctx);
@@ -160,7 +189,6 @@ function updateStatDistribution() {
     const inputs = document.querySelectorAll('input[type="number"]');
     let totalAddedPoints = 0;
     
-    // Calculate how many points have been added beyond the base 1 in each stat
     inputs.forEach(input => {
         let value = parseInt(input.value);
         if (isNaN(value)) value = 1;
@@ -168,16 +196,11 @@ function updateStatDistribution() {
         if (value > 20) value = 20;
         input.value = value;
         
-        // Points added beyond the base 1
         totalAddedPoints += (value - 1);
-        
-        // Update the displayed value
         input.nextElementSibling.textContent = value;
     });
     
-    // Adjust points to ensure total added points is exactly 20
     if (totalAddedPoints > 20) {
-        // Find the first input that has points we can reduce
         for (let i = 0; i < inputs.length; i++) {
             const input = inputs[i];
             const currentValue = parseInt(input.value);
