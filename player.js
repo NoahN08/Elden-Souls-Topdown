@@ -23,7 +23,8 @@ class Player {
         this.health = this.maxHealth;
         this.attackDamage = 20 + (this.strength * 3);
         this.attackCooldown = 0.5 - (this.dexterity * 0.01);
-        this.rollCooldown = 1.5 - (this.agility * 0.05);
+        this.baseRollCooldown = 1.5;
+        this.rollCooldown = this.baseRollCooldown;
         this.spellDamage = 30 + (this.intelligence * 4);
         
         // State
@@ -42,7 +43,18 @@ class Player {
         this.spellX = 0;
         this.spellY = 0;
         this.spellRadius = 10;
-        this.rotationAngle = 0; // Added for sprite rotation
+        this.rotationAngle = 0;
+
+        // Update derived stats based on agility
+        this.updateStats();
+    }
+
+    updateStats() {
+        // Movement speed increases by 5% per agility point (capped at +50% at 10 agility)
+        this.speed = this.baseSpeed * (1 + (this.agility * 0.05));
+        
+        // Roll cooldown decreases by 0.05s per agility point (from base 1.5s)
+        this.rollCooldown = Math.max(0.5, this.baseRollCooldown - (this.agility * 0.05));
     }
     
     update(deltaTime, keys, mouse, boss) {
@@ -81,7 +93,7 @@ class Player {
         
         // Handle blocking
         this.blocking = mouse.right;
-        this.speed = this.blocking ? this.baseSpeed * 0.5 : this.baseSpeed;
+        this.speed = this.blocking ? this.baseSpeed * (1 + (this.agility * 0.05)) * 0.5 : this.baseSpeed * (1 + (this.agility * 0.05));
         
         // Movement
         let moveX = 0;
@@ -158,7 +170,6 @@ class Player {
         
         // Calculate rotation to face boss
         const angleToBoss = Math.atan2(boss.y - this.y, boss.x - this.x);
-        // Add 90 degrees (π/2 radians) to make the "front" of the sprite face the boss
         this.rotationAngle = angleToBoss + Math.PI / 2;
         
         // Handle attacking
@@ -180,7 +191,7 @@ class Player {
         const dy = this.y - boss.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance < this.radius + boss.radius + 30) { // 30 is attack range
+        if (distance < this.radius + boss.radius + 30) {
             const damage = this.attackDamage * (stunActive ? 1.35 : 1);
             boss.takeDamage(damage, stunActive);
             addToStunMeter(damage * 0.7);
@@ -210,12 +221,10 @@ class Player {
         if (this.iframes) return false;
         
         if (this.blocking) {
-            // Regular block - take reduced damage
             this.health -= amount * 0.65;
             updateHealthBars();
             return false;
         } else {
-            // No block - take full damage
             this.health -= amount;
             updateHealthBars();
             return false;
@@ -223,30 +232,24 @@ class Player {
     }
     
     render(ctx) {
-        // Draw player
         ctx.save();
         
         if (this.iframes) {
             ctx.globalAlpha = 0.6;
         }
         
-        // Translate to player position
         ctx.translate(this.x, this.y);
-        
-        // Rotate to face boss
         ctx.rotate(this.rotationAngle);
         
-        // Draw sprite (centered)
         const spriteSize = this.radius * 2;
         ctx.drawImage(
             playerSprite,
-            -spriteSize / 2,  // x position (centered)
-            -spriteSize / 2,  // y position (centered)
-            spriteSize,        // width
-            spriteSize         // height
+            -spriteSize / 2,
+            -spriteSize / 2,
+            spriteSize,
+            spriteSize
         );
         
-        // Block indicator
         if (this.blocking) {
             ctx.strokeStyle = '#f1c40f';
             ctx.lineWidth = 3;
@@ -257,7 +260,6 @@ class Player {
         
         ctx.restore();
         
-        // Draw spell if active
         if (this.spellActive) {
             this.renderSpell(ctx);
         }
