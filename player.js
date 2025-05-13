@@ -1,4 +1,7 @@
 // player.js
+const playerSprite = new Image();
+playerSprite.src = 'sprite/player_idle.png';
+
 class Player {
     constructor(x, y, stats) {
         this.x = x;
@@ -39,6 +42,7 @@ class Player {
         this.spellX = 0;
         this.spellY = 0;
         this.spellRadius = 10;
+        this.rotationAngle = 0; // Added for sprite rotation
     }
     
     update(deltaTime, keys, mouse, boss) {
@@ -152,6 +156,11 @@ class Player {
             this.y = boss.y + Math.sin(angle) * minDistance;
         }
         
+        // Calculate rotation to face boss
+        const angleToBoss = Math.atan2(boss.y - this.y, boss.x - this.x);
+        // Add 90 degrees (π/2 radians) to make the "front" of the sprite face the boss
+        this.rotationAngle = angleToBoss + Math.PI / 2;
+        
         // Handle attacking
         if (mouse.left && this.attackTimer <= 0 && !this.isRolling && !this.blocking) {
             this.attack(boss);
@@ -221,22 +230,37 @@ class Player {
             ctx.globalAlpha = 0.6;
         }
         
-        // Body
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        // Translate to player position
+        ctx.translate(this.x, this.y);
+        
+        // Rotate to face boss
+        ctx.rotate(this.rotationAngle);
+        
+        // Draw sprite (centered)
+        const spriteSize = this.radius * 2;
+        ctx.drawImage(
+            playerSprite,
+            -spriteSize / 2,  // x position (centered)
+            -spriteSize / 2,  // y position (centered)
+            spriteSize,        // width
+            spriteSize         // height
+        );
         
         // Block indicator
         if (this.blocking) {
             ctx.strokeStyle = '#f1c40f';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius + 10, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.radius + 10, 0, Math.PI * 2);
             ctx.stroke();
         }
         
         ctx.restore();
+        
+        // Draw spell if active
+        if (this.spellActive) {
+            this.renderSpell(ctx);
+        }
     }
     
     renderSpell(ctx) {
