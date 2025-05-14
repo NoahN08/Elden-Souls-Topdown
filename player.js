@@ -221,7 +221,7 @@ class Player {
         if (this.iframes) return false;
         
         if (this.blocking) {
-            this.health -= amount * 0.65;
+            this.health -= amount * 0.85;
             updateHealthBars();
             return false;
         } else {
